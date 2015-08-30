@@ -20,52 +20,80 @@ use TYPO3\TYPO3CR\Domain\Model\NodeInterface;
  * matched elements.
  * Accepts objects, arrays, traversable objects, FlowQuery and filters.
  */
-class NotOperation extends \TYPO3\Eel\FlowQuery\Operations\AbstractOperation {
+class NotOperation extends \TYPO3\Eel\FlowQuery\Operations\AbstractOperation
+{
 
-	/**
-    	 * {@inheritdoc}
-    	 *
-    	 * @var string
-    	 */
-	static protected $shortName = 'not';
+    /**
+     * {@inheritdoc}
+     *
+     * @var string
+     */
+    static protected $shortName = 'not';
 
-	/**
-    	 * {@inheritdoc}
-    	 *
-    	 * @param \TYPO3\Eel\FlowQuery\FlowQuery $flowQuery the FlowQuery object
-    	 * @param array $arguments the filter arguments
-    	 * @return boolean
-    	 */
-	public function evaluate(FlowQuery $flowQuery, array $arguments) {
-        		if (!isset($arguments[0]) || empty($arguments[0])) {
-            			return;
-		}
-		$output = array();
-		$context = $flowQuery->getContext();
-		$filterQuery = new FlowQuery($context);
+    /**
+     * {@inheritdoc}
+     *
+     * @param \TYPO3\Eel\FlowQuery\FlowQuery $flowQuery the FlowQuery object
+     * @param array $arguments the filter arguments
+     * @return boolean
+     */
+    public function evaluate(FlowQuery $flowQuery, array $arguments) {
+        if (!isset($arguments[0]) || empty($arguments[0])) {
+            return;
+        }
+        $context = $flowQuery->getContext();
+        $filterQuery = new FlowQuery($context);
 
-		/*
-		 * @2do
-		 * Diese Abfrage irgendwie umschreiben dass wir festellen k?nnen ob wir die Filter Operation einsetzen k?nnen
-		 * oder ob wir simple Typen wie Arrays behaneln
-		 */
+        if ($this->isSimpleArgument($arguments[0])) {
+            $output = $this->filterSimple($context, $arguments);
+        } else {
+            $output = $this->filterNode($context, $filterQuery, $arguments);
+        }
 
-		if ($arguments[0] instanceof NodeInterface) {
-            			$filterQuery->pushOperation('filter', $arguments);
-            			$filteredContext = $filterQuery->get();
-            			$output = array_filter($context, function($element) use($filteredContext) {
-                				return !in_array($element, $filteredContext, TRUE);
-			});
-            			$output = array_values($output);
-            		} else {
-            			$output = array_filter($context, function($element) use($arguments) {
-                				return !in_array($element, $arguments, TRUE);
-			});
-            			$output = array_values($output);
-            		}
+        if (isset($output[0])) {
+            $flowQuery->setContext($output);
+        }
+    }
 
-		if (isset($output[0])) {
-            			$flowQuery->setContext($output);
-            		}
-	}
+    /**
+     * @param NodeInterface $context The node to filter by
+     * @return array The filtered node
+     */
+    protected function filterNode(NodeInterface $context, FlowQuery $filterQuery, array $arguments) {
+        $filterQuery->pushOperation('filter', $arguments);
+        $filteredContext = $filterQuery->get();
+        $output = array_filter($context, function ($element) use ($filteredContext) {
+            return !in_array($element, $filteredContext, TRUE);
+        });
+        return  array_values($output);
+    }
+
+    /**
+     * @param array $context The value to filter by
+     * @return array The filtered values
+     */
+    protected function filterSimple(array $context, $arguments) {
+        $output = array_filter($context, function ($element) use ($arguments) {
+            return !in_array($element, $arguments, TRUE);
+        });
+        return array_values($output);
+    }
+
+    /**
+     * @param array $arguemnts
+     * @return boolean TRUE if argument is a simple type (object, array, string, ...); i.e. everything which is NOT a class name
+     */
+    protected function isSimpleArgument($arguments) {
+        if (is_array($arguments)) {
+            foreach ($arguments as $type) {
+                if ($type === 'object' || $type === 'array' || \TYPO3\Flow\Utility\TypeHandling::isLiteral($type)){
+                    return false;
+                }
+            }
+        } else {
+            return $arguments === 'object' || $arguments === 'array' || \TYPO3\Flow\Utility\TypeHandling::isLiteral($arguments);
+        }
+
+        return true;
+    }
 }

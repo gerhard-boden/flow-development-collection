@@ -19,24 +19,24 @@ use TYPO3\Eel\FlowQuery\Operations\Object\NotOperation;
 class NotOperationTest extends \TYPO3\Flow\Tests\UnitTestCase {
 
     public function NotExamples() {
-                return array(
-                        'no argument' => array(array('a', 'b', 'c'), array(), array('a', 'b', 'c')),
-                        'empty array' => array(array(), array('[instanceof B]'), array()),
-                        'argumentIsFilter' => array(array('a', 'b', 'c', 'd'), array('b'), array('a', 'c', 'd')),
-                    );
+        return array(
+            'no argument' => array(array('a', 'b', 'c'), array(), array('a', 'b', 'c')),
+            'empty array' => array(array(), array('[instanceof B]'), array()),
+            'argumentIsFilter' => array(array('a', 'b', 'c', 'd'), array('b'), array('a', 'c', 'd')),
+        );
     }
 
     /**
-         * @test
-         * @dataProvider NotExamples
-         */
+     * @test
+     * @dataProvider NotExamples
+     */
     public function evaluateSetsTheCorrectPartOfTheContextArray($value, $arguments, $expected) {
-                $flowQuery = new \TYPO3\Eel\FlowQuery\FlowQuery($value);
-        
-                $operation = new NotOperation();
-                $operation->evaluate($flowQuery, $arguments);
-        
-                $this->assertEquals($expected, $flowQuery->getContext());
-            }
+        $flowQuery = new \TYPO3\Eel\FlowQuery\FlowQuery($value);
+
+        $operation = new NotOperation();
+        $operation->evaluate($flowQuery, $arguments);
+
+        $this->assertEquals($expected, $flowQuery->getContext());
+    }
 
 }
